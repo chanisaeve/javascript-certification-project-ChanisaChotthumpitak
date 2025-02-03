@@ -1,5 +1,6 @@
 // Necessary Imports (you will need to use this)
 const { Student } = require('./Student')
+const fs = require('fs').promises;
 
 /**
  * Node Class (GIVEN, you will need to use this)
@@ -28,7 +29,7 @@ class LinkedList {
   // Public Fields
   head              // Object
   tail              // Object
-  length            // Number representing size of LinkedList
+  length            // Number representing size of LinkedList 
 
   /**
    * REQUIRES:  None
@@ -37,6 +38,9 @@ class LinkedList {
    */
   constructor() {
     // TODO
+    this.head = null;
+    this.tail = null;
+    this.length = 0;
   }
 
   /**
@@ -49,6 +53,20 @@ class LinkedList {
    */
   addStudent(newStudent) {
     // TODO
+    const studentObject = new Node(newStudent);
+
+    if (this.head === null) {
+      this.head = studentObject;
+      this.tail = studentObject;
+      this.length++;
+    }
+
+    else{
+      this.tail.next = studentObject;
+      this.tail = studentObject;
+      this.length++;
+    }
+
   }
 
   /**
@@ -61,6 +79,26 @@ class LinkedList {
    */
   removeStudent(email) {
     // TODO
+    if (this.head === null) {
+      return;
+    }
+    
+    if (this.head.data.getEmail() === email){
+      this.head = this.head.next;
+      this.length--;
+      return;
+      }
+
+
+    let current = this.head;
+      while (current.next !== null) {
+        if (current.next.data.getEmail() === email){
+          current.next = current.next.next;
+          this.length--;
+          return; 
+        }
+      current = current.next;
+      }
   }
 
   /**
@@ -70,6 +108,16 @@ class LinkedList {
    */
   findStudent(email) {
     // TODO
+    if (this.head === null){
+      return -1;
+    }
+    let current = this.head;
+    while (current !== null){
+      if (current.data.getEmail() === email){
+        return current.data;
+      }
+      current = current.next;
+    }
     return -1
   }
 
@@ -78,8 +126,11 @@ class LinkedList {
    * EFFECTS:   Clears all students from the Linked List
    * RETURNS:   None
    */
-  #clearStudents() {
+  clearStudents() {
     // TODO
+    this.head = null;
+    this.tail = null;
+    this.length = 0;
   }
 
   /**
@@ -92,7 +143,18 @@ class LinkedList {
    */
   displayStudents() {
     // TODO
-    return "";
+    if (this.head === null) {
+      return "";
+  }
+
+  let names = [];  // Use array instead of string
+  let current = this.head;
+
+  while (current !== null) {
+      names.push(current.data.getName());
+      current = current.next;
+  }
+  return names.join(", ");
   }
 
   /**
@@ -100,9 +162,25 @@ class LinkedList {
    * EFFECTS:   None
    * RETURNS:   A sorted array of students by name
    */
-  #sortStudentsByName() {
+  sortStudentsByName() {
     // TODO
-    return [];
+    if (this.head === null) {
+      return [];
+  }
+
+    let nameAlphabet = [];
+    let current = this.head;
+    while (current !== null){
+      nameAlphabet.push(current.data);
+      current = current.next
+    }
+
+    nameAlphabet.sort((a, b) =>{
+     return a.getName().localeCompare(b.getName());
+
+    });
+
+    return nameAlphabet;
   }
 
   /**
@@ -114,8 +192,27 @@ class LinkedList {
    */
   filterBySpecialization(specialization) {
     // TODO
-    return [];
-  }
+    if (this.head === null) {
+      return [];
+    }
+
+    let studentsSpecialization = [];
+    let current = this.head;
+
+    while (current !== null){
+      if (current.data.getSpecialization() === specialization){
+          studentsSpecialization.push(current.data);
+      }
+      current = current.next;
+    }
+
+    studentsSpecialization.sort((a, b) => {
+        return a.getName().localeCompare(b.getName());
+      });
+
+      return studentsSpecialization;
+
+    }
 
   /**
    * REQUIRES:  minAge (Number)
@@ -124,9 +221,25 @@ class LinkedList {
    * CONSIDERATIONS:
    * - Use sortStudentsByName()
    */
-  filterByMinAge(minAge) {
+  filterByMinYear(minYear) {
     // TODO
-    return [];
+    if (this.head === null) {
+      return [];
+  }
+
+  let studentYear = [];
+  let current = this.head;
+
+  while (current !== null) {                                //while current has data 
+      if (current.data.getYear() >= minYear) {              //if year of current is greater or equal input (minYear)
+          studentYear.push(current.data);                   //pick current to StudentYear array
+      }
+      current = current.next;           //point to the next node
+  }
+
+  studentYear.sort((a, b) => a.getName().localeCompare(b.getName()));          //if wanna sort by then use the command 'getYear'
+
+  return studentYear;
   }
 
   /**
@@ -136,6 +249,26 @@ class LinkedList {
    */
   async saveToJson(fileName) {
     // TODO
+    let dataStudent = [];
+    let current = this.head;
+
+    while (current !== null){
+      dataStudent.push({
+        name: current.data.getName(),
+        year: current.data.getYear(),
+        email: current.data.getEmail(),
+        specialization: current.data.getSpecialization(),
+      });
+      current = current.next;
+    }
+
+
+  try {
+    await fs.writeFile(fileName, JSON.stringify(dataStudent, null, 2));
+    }
+  catch (error) {
+      console.log ('Error saving to file:', error);
+    }
   }
 
   /**
@@ -147,8 +280,25 @@ class LinkedList {
    */
   async loadFromJSON(fileName) {
     // TODO
+    try {
+      const fileData = await fs.readFile (fileName, 'utf8');
+      const dataStudent = JSON.parse(fileData);
+      this.clearStudents();
+
+      for (const student of dataStudent){
+        const newStudent = new Student(
+          student.name,
+          student.year,
+          student.email,
+          student.specialization);
+
+      this.addStudent(newStudent);
+      }
+
+    }
+    catch (error) {
+      console.error ('Error loading file:', error);
+    }
   }
-
 }
-
 module.exports = { LinkedList }
